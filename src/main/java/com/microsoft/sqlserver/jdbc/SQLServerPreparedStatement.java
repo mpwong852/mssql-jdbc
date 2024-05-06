@@ -77,9 +77,6 @@ public class SQLServerPreparedStatement extends SQLServerStatement implements IS
     // flag whether is call escape syntax
     private boolean isCallEscapeSyntax;
 
-    // flag whether is four part syntax
-    private boolean isFourPartSyntax;
-
     /** Parameter positions in processed SQL statement text. */
     final int[] userSQLParamPositions;
 
@@ -1258,10 +1255,8 @@ public class SQLServerPreparedStatement extends SQLServerStatement implements IS
         // 4. Compliant CALL escape syntax
         // If isExecEscapeSyntax is true, EXEC escape syntax is used then use prior behaviour of
         // wrapping call to execute the procedure
-        // If isFourPartSyntax is true, sproc is being executed against linked server, then
-        // use prior behaviour of wrapping call to execute procedure
         return (null != procedureName && paramCount != 0 && !isTVPType(params) && isCallEscapeSyntax
-                && !isExecEscapeSyntax && !isFourPartSyntax);
+                && !isExecEscapeSyntax);
     }
 
     /**

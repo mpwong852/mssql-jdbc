@@ -155,6 +155,10 @@ public class SQLServerStatement implements ISQLServerStatement {
     /** Checks if the prepared statement's parameters were set by index **/
     protected boolean isSetByIndex = false;
 
+    protected boolean isFourPartSyntax;
+
+    private boolean skipInitialRetValRpc = true;
+
     /**
      * Currently executing or most recently executed TDSCommand (statement cmd, server cursor cmd, ...) subject to
      * cancellation through Statement.cancel.
@@ -1671,12 +1675,23 @@ public class SQLServerStatement implements ISQLServerStatement {
                 int status = tdsReader.peekReturnValueStatus();
 
                 SQLServerStatement.this.returnValueStatus = status;
+                boolean isRpc = isFourPartSyntax && skipInitialRetValRpc;
 
                 // We are only interested in return values that are statement OUT parameters,
                 // in which case we need to stop parsing and let CallableStatement take over.
                 // A RETVALUE token appearing in the execution results, but before any RETSTATUS
                 // token, is a TEXTPTR return value that should be ignored.
-                if (moreResults && null == procedureRetStatToken && status != userDefinedFunctionReturnStatus) {
+                if ((moreResults && null == procedureRetStatToken && status != userDefinedFunctionReturnStatus) || isRpc) {
+
+                    if (!skipInitialRetValRpc) {
+                        skipInitialRetValRpc = true;
+                        return false;
+                    }
+
+                    if (isRpc) {
+                        skipInitialRetValRpc = false;
+                    }
+
                     Parameter p = new Parameter(
                             Util.shouldHonorAEForParameters(stmtColumnEncriptionSetting, connection));
                     p.skipRetValStatus(tdsReader);
